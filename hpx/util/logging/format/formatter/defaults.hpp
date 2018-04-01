@@ -17,10 +17,6 @@
 #ifndef JT28092007_formatter_defaults_HPP_DEFINED
 #define JT28092007_formatter_defaults_HPP_DEFINED
 
-#if defined(HPX_MSVC) && (HPX_MSVC >= 1020)
-# pragma once
-#endif
-
 #include <hpx/util/logging/detail/fwd.hpp>
 #include <hpx/util/logging/detail/manipulator.hpp>
 #include <hpx/util/logging/format/formatter/convert_format.hpp>
@@ -68,7 +64,7 @@ struct idx_t : is_generic, formatter::non_const_context<std::uint64_t>,
 
     idx_t() : non_const_context_base(0ull) {}
     template<class msg_type> void operator()(msg_type & str) const {
-        std::basic_ostringstream<char_type> idx;
+        std::ostringstream idx;
         idx << std::hex << std::setw(sizeof(std::uint64_t)*2)
             << std::setfill('0') << ++context();
 
@@ -89,7 +85,7 @@ template<class convert = do_convert_format::append> struct append_newline_t
     : is_generic, hpx::util::logging::op_equal::always_equal {
     typedef convert convert_type;
     template<class msg_type> void operator()(msg_type & str) const {
-        convert::write( HPX_LOG_STR("\n"), str );
+        convert::write( "\n", str );
     }
 };
 
@@ -113,7 +109,7 @@ template<class convert = do_convert_format::append> struct append_newline_if_nee
                 is_needed = false;
 
         if ( is_needed)
-            convert::write( HPX_LOG_STR("\n"), str );
+            convert::write( "\n", str );
     }
 };
 
@@ -140,4 +136,3 @@ typedef append_newline_if_needed_t<> append_newline_if_needed;
 }}}}
 
 #endif
-

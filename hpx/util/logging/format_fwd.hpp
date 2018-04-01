@@ -18,10 +18,6 @@
 #ifndef JT28092007_format_fwd_HPP_DEFINED
 #define JT28092007_format_fwd_HPP_DEFINED
 
-#if defined(HPX_MSVC) && (HPX_MSVC >= 1020)
-# pragma once
-#endif
-
 #include <hpx/util/logging/detail/format_fwd_detail.hpp>
 
 #if !defined( HPX_LOG_COMPILE_FAST)
@@ -31,4 +27,3 @@
 
 
 #endif
-

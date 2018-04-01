@@ -17,16 +17,9 @@
 #ifndef JT28092007_logger_base_HPP_DEFINED
 #define JT28092007_logger_base_HPP_DEFINED
 
-#if defined(HPX_MSVC) && (HPX_MSVC >= 1020)
-# pragma once
-#endif
-
 #include <hpx/util/logging/detail/fwd.hpp>
-#include <hpx/util/logging/detail/tss/tss.hpp>
-
-// see "Using the logger(s)/filter(s) after they've been destroyed"
-// section in the documentation
-//#include <hpx/util/logging/detail/after_being_destroyed.hpp>
+#include <sstream>
+#include <string>
 
 #ifndef JT28092007_logger_HPP_DEFINED
 #error donot include this directly. include <hpx/util/logging/logging.hpp> instead
@@ -45,7 +38,7 @@ namespace hpx { namespace util { namespace logging {
         template<class gather_msg> struct find_gather_if_default {
             typedef typename use_default<gather_msg,
                     gather::ostream_like::return_str<
-                std::basic_string<char_type>, std::basic_ostringstream<char_type> > >
+                std::string, std::ostringstream > >
                 ::type gather_type;
             typedef typename gather_type::msg_type msg_type;
         };
@@ -137,7 +130,7 @@ namespace hpx { namespace util { namespace logging {
 
     @class logger_base
     */
-    template<class gather_msg , class write_msg, class dummy = override >
+    template<class gather_msg , class write_msg >
     struct logger_base
             : detail::default_cache_keeper<  detail
         ::cache_before_init<typename detail::find_gather_if_default<gather_msg>
@@ -152,14 +145,7 @@ namespace hpx { namespace util { namespace logging {
         typedef detail::common_base_holder<gather_msg, write_msg> common_base_type;
 
     protected:
-        logger_base() {
-#if defined(HPX_LOG_TSS_USE_INTERNAL)
-            // we need ALL loggers to depend on delete_array
-            // - this way, delete_array will be destroyed
-            // after all loggers are destroyed
-            detail::new_object_ensure_delete< default_ > ();
-#endif
-        }
+        logger_base() {}
         logger_base(const logger_base&) {}
 
     private:
@@ -194,4 +180,3 @@ namespace hpx { namespace util { namespace logging {
 }}}
 
 #endif
-

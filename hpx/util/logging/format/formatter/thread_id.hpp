@@ -17,10 +17,6 @@
 #ifndef JT28092007_formatter_thread_id_HPP_DEFINED
 #define JT28092007_formatter_thread_id_HPP_DEFINED
 
-#if defined(HPX_MSVC) && (HPX_MSVC >= 1020)
-# pragma once
-#endif
-
 #include <hpx/config.hpp>
 #include <hpx/util/logging/detail/fwd.hpp>
 #include <hpx/util/logging/format/formatter/convert_format.hpp>
@@ -42,7 +38,7 @@ hpx::util::logging::op_equal::always_equal {
     typedef convert convert_type;
 
     template<class msg_type> void operator()(msg_type & msg) const {
-        std::basic_ostringstream<char_type> out;
+        std::ostringstream out;
         out
     #if defined (HPX_WINDOWS)
             << ::GetCurrentThreadId()
@@ -64,4 +60,3 @@ typedef thread_id_t<> thread_id;
 }}}}
 
 #endif
-

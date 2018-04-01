@@ -17,11 +17,8 @@
 #ifndef JT28092007_find_gather_HPP_DEFINED
 #define JT28092007_find_gather_HPP_DEFINED
 
-#if defined(HPX_MSVC) && (HPX_MSVC >= 1020)
-# pragma once
-#endif
-
 #include <hpx/util/logging/detail/fwd.hpp>
+#include <string>
 
 namespace hpx { namespace util { namespace logging {
 
@@ -49,35 +46,21 @@ namespace hpx { namespace util { namespace logging {
     }}
 
     namespace optimize {
-        template<class> struct cache_string_one_str ;
-        template<class, class> struct cache_string_several_str ;
+        struct cache_string_one_str ;
     }
 
     namespace detail {
         template <class stream, class param>
-        struct find_gather {};
-
-        template <class stream>
-        struct find_gather< stream, std::basic_string<logging::char_type> >
-        {
-            typedef gather::ostream_like::return_str< std::basic_string<char_type>,
-                stream > type ;
+        struct find_gather {
+            typedef gather::ostream_like::return_str< std::string, stream > type ;
         };
 
-        template< class stream, class string_type>
+        template< class stream >
         struct find_gather< stream, hpx::util::logging::optimize
-            ::cache_string_one_str<string_type> > {
+            ::cache_string_one_str > {
             typedef gather::ostream_like::return_str< hpx::util::logging::optimize
-                ::cache_string_one_str<string_type>, stream > type;
+                ::cache_string_one_str, stream > type;
         };
-
-        template< class stream, class string_type>
-        struct find_gather< stream, hpx::util::logging::optimize
-            ::cache_string_several_str<string_type,void*> > {
-            typedef gather::ostream_like::return_str< hpx::util::logging::optimize
-                ::cache_string_several_str<string_type,void*>, stream > type;
-        };
-
 
         template<class stream, class string, class p1, class p2, class p3,
         class p4, class p5, class p6, class p7, class p8, class p9, class p10>
@@ -91,4 +74,3 @@ namespace hpx { namespace util { namespace logging {
 }}}
 
 #endif
-

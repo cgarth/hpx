@@ -17,10 +17,6 @@
 #ifndef JT28092007_log_keeper_HPP_DEFINED
 #define JT28092007_log_keeper_HPP_DEFINED
 
-#if defined(HPX_MSVC) && (HPX_MSVC >= 1020)
-# pragma once
-#endif
-
 #include <hpx/util/logging/detail/fwd.hpp>
 #include <hpx/util/logging/detail/forward_constructor.hpp>
 
@@ -85,10 +81,6 @@ private:
 
     This will allow you to log messages even if you don't know the full type of the log
     (which can aid compilation time).
-
-    This keeps the logger by value, so that the after_being_destroyed stuff works.
-    More specifically, in case the logger is used after it's been destroyed,
-    the logger_holder instances CAN ONLY BE GLOBAL.
 */
 template<class type> struct logger_holder_by_value : logger_holder<type> {
     typedef logger_holder<type> base_type;
@@ -194,4 +186,3 @@ template<class type> inline const typename logger_holder<type>::logger_base_type
 }}}
 
 #endif
-

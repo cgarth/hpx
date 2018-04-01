@@ -17,14 +17,12 @@
 #ifndef JT28092007_formatter_tags_HPP_DEFINED
 #define JT28092007_formatter_tags_HPP_DEFINED
 
-#if defined(HPX_MSVC) && (HPX_MSVC >= 1020)
-# pragma once
-#endif
-
 #include <hpx/util/logging/detail/fwd.hpp>
 #include <hpx/util/logging/detail/manipulator.hpp>
 #include <hpx/util/logging/format/formatter/time.hpp>
+#include <hpx/util/logging/detail/tags.hpp>
 #include <sstream>
+#include <string>
 #include <hpx/util/logging/format.hpp>
 
 namespace hpx { namespace util { namespace logging { namespace formatter {
@@ -39,7 +37,6 @@ namespace hpx { namespace util { namespace logging { namespace formatter {
 */
 template<class type, class tag_type> struct uses_tag {
     template<class tag_holder_type> void operator()(tag_holder_type & str) const {
-        typedef typename tag_holder_type::string_type string_type;
         // automatic conversion - tag holder provides this
         const tag_type & tag = str;
 
@@ -99,7 +96,7 @@ struct level_t : is_generic, uses_tag< level_t<convert>,
     typedef convert convert_type;
     template<class msg_type, class tag_type> void write_tag(msg_type & str,
         const tag_type & tag) const {
-        typedef typename hpx::util::logging::dump_level<>::type dump_type;
+        typedef dump_default_levels dump_type;
         convert::write( dump_type::dump(tag.val) , str);
     }
 };
@@ -119,7 +116,7 @@ template<class convert = do_convert_format::prepend> struct time_t
     typedef hpx::util::logging::formatter::time_t<convert> time_write_type;
     time_write_type m_writer;
 
-    time_t(const hold_string_type & format) : m_writer(format) {}
+    time_t(const std::string & format) : m_writer(format) {}
 
     template<class msg_type, class tag_type>
     void write_tag(msg_type & str, const tag_type & tag) const {
@@ -157,9 +154,9 @@ template<class convert = do_convert_format::prepend> struct module_t
 
 See @ref hpx::util::logging::tag "how to use tags".
 */
-template<class stream_type = ::std::basic_ostringstream<char_type> ,
+template<class stream_type = ::std::ostringstream ,
 class convert = do_convert_format::prepend> struct thread_id_t
-        : is_generic, uses_tag< thread_id_t< ::std::basic_ostringstream<char_type>,
+        : is_generic, uses_tag< thread_id_t< ::std::ostringstream,
     convert>, ::hpx::util::logging::tag::thread_id >,
     hpx::util::logging::op_equal::always_equal  {
 
@@ -218,4 +215,3 @@ typedef thread_id_t<> thread_id;
 }}}}}
 
 #endif
-

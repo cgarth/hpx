@@ -18,8 +18,6 @@
 
 #include <boost/current_function.hpp>
 
-HPX_LOG_FORMAT_MSG(optimize::cache_string_one_str<>)
-
 ///////////////////////////////////////////////////////////////////////////////
 // specific logging
 #define LTM_(lvl)   LHPX_(lvl, "  [TM] ")   /* thread manager */

@@ -17,10 +17,6 @@
 #ifndef JT28092007_cache_before_init_HPP_DEFINED
 #define JT28092007_cache_before_init_HPP_DEFINED
 
-#if defined(HPX_MSVC) && (HPX_MSVC >= 1020)
-# pragma once
-#endif
-
 #ifndef JT28092007_logger_HPP_DEFINED
 #error Donot include this directly. Include hpx/util/logging/logging.hpp instead
 #endif
@@ -62,9 +58,6 @@ struct thread_info {
     is_enabled_func last_enabled;
 };
 
-#if defined( HPX_LOG_BEFORE_INIT_USE_CACHE_FILTER) \
- || defined( HPX_LOG_BEFORE_INIT_USE_LOG_ALL)
-
 //////////////////////////////////////////////////////////////////
 // Messages that were logged before initializing the log - Caching them
 
@@ -74,7 +67,7 @@ struct thread_info {
 
     Note:
     - you should initialize your logs ASAP
-    - before logs are initialized, logging each message is done using a mutex .
+    - before logs are initialized
     - cache can be turned off ONLY ONCE
 */
 template<class msg_type> struct cache_before_init {
@@ -107,8 +100,7 @@ public:
         if ( m_is_caching_off)
             return true; // cache has been turned off
 
-        // now we go the slow way - use mutex to see if cache is turned off
-        mutex::scoped_lock lk(m_cs);
+        // now we go the slow way - see if cache is turned off
         m_is_caching_off = !(m_cache.is_using_cache);
         return m_is_caching_off;
     }
@@ -119,14 +111,12 @@ public:
             return; // already turned off
 
         {
-            mutex::scoped_lock lk(m_cs);
             m_cache.is_using_cache = false;
         }
 
         // dump messages
         typename cache::message_array msgs;
         {
-            mutex::scoped_lock lk(m_cs);
             std::swap( m_cache.msgs, msgs);
         }
         for ( typename cache::message_array::iterator b = msgs.begin(),
@@ -141,21 +131,17 @@ public:
     }
 
     void add_msg(const msg_type & msg) const {
-        mutex::scoped_lock lk(m_cs);
         // note : last_enabled can be null, if we don't want to use filters
-        //        (HPX_LOG_BEFORE_INIT_USE_LOG_ALL)
         is_enabled_func func = m_cache.threads[ get_thread_id() ].last_enabled ;
         m_cache.msgs.push_back( message(func, msg) );
     }
 
 public:
     void set_callback(is_enabled_func f) {
-        mutex::scoped_lock lk(m_cs);
         m_cache.threads[ get_thread_id() ].last_enabled = f;
     }
 
 private:
-    mutable mutex m_cs;
     mutable cache m_cache;
     /**
     IMPORTANT: to make sure we know when the cache is off as efficiently as possible,
@@ -164,38 +150,15 @@ private:
       - if this is true, it's clear that caching has been turned off
       - if this is false, we don't know for sure, thus, continue to ask
 
-    - second, use the thread-safe resource 'm_cache' (use a mutex,
-      a bit slow, but that's life)
+    - second, use the thread-safe resource 'm_cache'
       - if m_cache.is_using_cache is true, we're still using cache
       - if m_cache.is_using_cache is false, caching has been turned off
         - set m_is_enabled to true, thus this will propagate to all threads soon
-          (depending on your lock_resource)
     */
     mutable bool m_is_caching_off;
 };
-
-#else
-//////////////////////////////////////////////////////////////////
-// Messages that were logged before initializing the log - NOT Caching them
-
-template<class msg_type> struct cache_before_init {
-    template<class writer_type>
-    void on_do_write(msg_type & msg, const writer_type & writer) const {
-        writer(msg);
-    }
-
-    template<class writer_type>
-    void turn_cache_off(const writer_type & writer) {
-    }
-
-    bool is_cache_turned_off() const { return true; }
-};
-
-#endif
-
 
 
 }}}}
 
 #endif
-

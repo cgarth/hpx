@@ -20,19 +20,9 @@
 #ifndef JT28092007_macros_HPP_DEFINED
 #define JT28092007_macros_HPP_DEFINED
 
-#if defined(HPX_MSVC) && (HPX_MSVC >= 1020)
-# pragma once
-#endif
-
-#if !defined(HPX_LOG_TSS_USE_INTERNAL) && !defined(HPX_LOG_TSS_USE_BOOST) \
- && !defined(HPX_LOG_TSS_USE_CUSTOM) && !defined(HPX_HAVE_LOG_NO_TSS)
-// use has not specified what TSS strategy to use
-#define HPX_LOG_TSS_USE_INTERNAL
-
-#endif
-
 #include <boost/current_function.hpp>
 #include <hpx/util/logging/detail/cache_before_init_macros.hpp>
+#include <string>
 
 namespace hpx { namespace util { namespace logging {
 
@@ -53,9 +43,6 @@ namespace hpx { namespace util { namespace logging {
         - @ref HPX_LOG_USE_LOG_IF_LEVEL
         - @ref HPX_LOG_USE_LOG_IF_FILTER
         - @ref HPX_LOG_USE_SIMPLE_LOG_IF_FILTER
-    - @ref macros_set_formatters
-        - @ref HPX_LOG_FORMAT_MSG
-        - @ref HPX_LOG_DESTINATION_MSG
     - @ref macros_use_tags
         - @ref HPX_LOG_TAG
         - @ref HPX_LOG_TAG_LEVEL
@@ -65,16 +52,6 @@ namespace hpx { namespace util { namespace logging {
         - @ref macros_compile_time_fast
         - @ref macros_compile_time_slow
         - @ref HPX_LOG_compile_results
-    - @ref macros_tss
-        - @ref HPX_LOG_TSS_USE_INTERNAL
-        - @ref HPX_LOG_TSS_USE_BOOST
-        - @ref HPX_LOG_TSS_USE_CUSTOM
-        - @ref HPX_HAVE_LOG_NO_TSS
-
-
-
-
-
 
 
 Simply put, you need to use macros to make sure objects (logger(s) and filter(s)) :
@@ -307,52 +284,6 @@ See @ref defining_logger_macros for more details
 
 
 \n\n
-@subsection macros_set_formatters Setting formatter/destination strings
-
-@subsubsection HPX_LOG_FORMAT_MSG HPX_LOG_FORMAT_MSG
-
-Sets the string class used by the formatter classes.
-By default, it's <tt>std::(w)string</tt>
-
-@code
-HPX_LOG_FORMAT_MSG( string_class )
-@endcode
-
-You can do this to optimize formatting the message
-- that is, use a string class optimized for appending and prepending messages
-(which is basically what formatting is all about).
-
-Example:
-@code
-HPX_LOG_FORMAT_MSG( optimize::cache_string_one_str<> )
-@endcode
-
-
-@subsubsection HPX_LOG_DESTINATION_MSG HPX_LOG_DESTINATION_MSG
-
-Sets the string class used by the destination classes. By default,
-it's <tt>std::(w)string</tt>
-
-@code
-HPX_LOG_DESTINATION_MSG( string_class )
-@endcode
-
-Example:
-@code
-HPX_LOG_DESTINATION_MSG( std::string )
-@endcode
-
-Usually you won't need to change this.
-The destination classes don't change the contets of the string
-- each class just writes the string
-to a given destination.
-
-
-
-
-
-
-\n\n
 
 @subsection macros_use_tags Using tags
 
@@ -502,66 +433,6 @@ Tested on 16 jan 2008/intel core duo 2.16Ghz machine, 5400Rpm HDD
 If you have other results, or results from a big program using Boost Logging,
 please share them with me. Thanks!
 
-
-
-
-
-
-
-\n\n
-
-@subsection macros_tss Macros that deal with Thread Specific Storage
-
-These are the macros that specify what implementation of TSS (Thread Specific Storage)
-we will be using.
-Note that I did my best to remove the dependency on compat::thread
-- the only dependence left is
-when you use use a logger that writes everything @ref writer::on_dedicated_thread
-"on a dedicated thread".
-
-By default, for TSS, we use the internal implementation (no dependency).
-
-The possibilities are:
-- @ref HPX_LOG_TSS_USE_INTERNAL : use our internal implementation
-  (no dependency on compat::thread)
-- @ref HPX_LOG_TSS_USE_BOOST : use the implementation from compat::thread
-  (dependency on compat::thread, of course).
-- @ref HPX_LOG_TSS_USE_CUSTOM : uses a custom implementation.
-  The interface of this implementation should match compat::thread's interface of
-  @c thread_specific_ptr class
-- @ref HPX_HAVE_LOG_NO_TSS : don't use TSS
-
-
-@subsubsection HPX_LOG_TSS_USE_INTERNAL HPX_LOG_TSS_USE_INTERNAL
-
-If defined, it uses our internal implementation for @ref macros_tss "TSS"
-
-@subsubsection HPX_LOG_TSS_USE_BOOST HPX_LOG_TSS_USE_BOOST
-
-If defined, it uses the compat::thread's implementation for @ref macros_tss "TSS"
-
-@subsubsection HPX_LOG_TSS_USE_CUSTOM HPX_LOG_TSS_USE_CUSTOM
-
-If defined, it uses a custom implementation for @ref macros_tss "TSS".
-The interface of this implementation should match
-compat::thread's interface of @c thread_specific_ptr class.
-
-Your class should have this interface:
-@code
-template <typename T> class my_thread_specific_ptr ;
-@endcode
-
-When #defining HPX_LOG_TSS_USE_CUSTOM, do it like this:
-
-@code
-#define HPX_LOG_TSS_USE_CUSTOM = my_thread_specific_ptr
-@endcode
-
-
-@subsubsection HPX_HAVE_LOG_NO_TSS HPX_HAVE_LOG_NO_TSS
-
-If defined, we don't use @ref macros_tss "TSS" as all.
-
 */
 
 #ifdef HPX_LOG_COMPILE_FAST_ON
@@ -654,45 +525,6 @@ If defined, we don't use @ref macros_tss "TSS" as all.
 
 
 
-///////////////////////////////////////////////////////////////////////////////
-// Format and Destination Macros
-
-/** @section HPX_LOG_FORMAT_MSG HPX_LOG_FORMAT_MSG
-
-@note
-    When using HPX_LOG_FORMAT_MSG or HPX_LOG_DESTINATION_MSG,
-    you must not be within any namespace scope.
-
-    This is because when using this macro, as @c msg_class,
-    you can specify any of your class, or
-    something residing in @c hpx::util::logging namespace.
-*/
-#define HPX_LOG_FORMAT_MSG(msg_class) \
-    namespace hpx { namespace util { namespace logging { namespace formatter { \
-        template<> struct msg_type<override> { typedef msg_class type; }; \
-    }}}}
-
-/** @section HPX_LOG_DESTINATION_MSG HPX_LOG_DESTINATION_MSG
-
-@note
-    When using HPX_LOG_FORMAT_MSG or HPX_LOG_DESTINATION_MSG,
-    you must not be within any namespace scope.
-
-    This is because when using this macro, as @c msg_class,
-    you can specify any of your class, or
-    something residing in @c hpx::util::logging namespace.
-*/
-#define HPX_LOG_DESTINATION_MSG(msg_class) \
-    namespace hpx { namespace util { namespace logging { namespace destination { \
-        template<> struct msg_type<override> { typedef msg_class type; }; \
-    }}}}
-
-
-
-
-
-
-
 //////////////////////////////////////////////////////////////////////////////////////
 // Tags
 
@@ -713,4 +545,3 @@ If defined, we don't use @ref macros_tss "TSS" as all.
 }}}
 
 #endif
-

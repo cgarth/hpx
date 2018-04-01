@@ -17,10 +17,6 @@
 #ifndef JT28092007_format_HPP_DEFINED
 #define JT28092007_format_HPP_DEFINED
 
-#if defined(HPX_MSVC) && (HPX_MSVC >= 1020)
-# pragma once
-#endif
-
 #include <hpx/util/assert.hpp>
 #include <hpx/util/logging/detail/fwd.hpp>
 #include <hpx/util/logging/detail/forward_constructor.hpp>
@@ -170,9 +166,6 @@ and you want to define the logger classes, in a source file
         If you derive from @c destination::base, this type can be
         @c destination::base::raw_param (see below).
 
-        @param string_type [optional] A class that can hold a string
-        (that is, a copy of the message)
-
         Example:
 
         @code
@@ -196,7 +189,7 @@ and you want to define the logger classes, in a source file
         @endcode
 
     */
-    template<class msg_type, class string_type = hold_string_type>
+    template<class msg_type>
     struct simple_care_for_clear_format : simple<msg_type> {
         typedef simple<msg_type> simple_base_type;
 
@@ -286,22 +279,13 @@ See manipulator.
 @param destination_base The base class for all destination classes from your application.
 See manipulator.
 
-@param lock_resource_type What class you use to do allow
-thread-safe access to an instance of this clas (used internally).
-
     */
     template<
             class formatter_base,
-            class destination_base,
-            class lock_resource = default_ >
+            class destination_base >
     struct simple {
         typedef typename formatter_base::ptr_type formatter_ptr;
         typedef typename destination_base::ptr_type destination_ptr;
-
-        typedef typename detail::to_override<formatter_base>::type override_;
-        typedef typename use_default<lock_resource,
-            typename hpx::util::logging::types<override_>::lock_resource >
-            ::type lock_resource_type;
 
         typedef std::vector<formatter_ptr> f_array;
         typedef std::vector<destination_ptr> d_array;
@@ -310,52 +294,44 @@ thread-safe access to an instance of this clas (used internally).
             d_array destinations;
         };
 
-        typedef typename lock_resource_type::template finder<write_info>::type data;
-
         template<class formatter_array, class destination_array>
         simple(const formatter_array&, const destination_array&) {}
 
         void append_formatter(formatter_ptr fmt) {
-            typename data::write to_write(m_to_write);
-            to_write->formats.push_back(fmt);
+            m_to_write.formats.push_back(fmt);
         }
         void del_formatter(formatter_ptr fmt) {
-            typename data::write to_write(m_to_write);
-            typename f_array::iterator del = std::remove(to_write->formats.begin(),
-                to_write->formats.end(), fmt);
-            to_write->formats.erase(del, to_write->formats.end());
+            typename f_array::iterator del = std::remove(m_to_write.formats.begin(),
+                m_to_write.formats.end(), fmt);
+            m_to_write.formats.erase(del, m_to_write.formats.end());
         }
 
         void append_destination(destination_ptr dest) {
-            typename data::write to_write(m_to_write);
-            to_write->destinations.push_back(dest);
+            m_to_write.destinations.push_back(dest);
         }
 
         void del_destination(destination_ptr dest) {
-            typename data::write to_write(m_to_write);
             typename d_array::iterator del =
-                std::remove(to_write->destinations.begin(),
-                    to_write->destinations.end(), dest);
-            to_write->destinations.erase(del, to_write->destinations.end());
+                std::remove(m_to_write.destinations.begin(),
+                    m_to_write.destinations.end(), dest);
+            m_to_write.destinations.erase(del, m_to_write.destinations.end());
         }
 
         template<class format_and_write,
         class msg_type> void write(msg_type & msg) const {
             format_and_write m(msg);
 
-            // note: here, we're reading (data::read)!
-            typename data::read to_write(m_to_write);
-            for ( typename f_array::const_iterator b_f = to_write->formats.begin(),
-                e_f = to_write->formats.end(); b_f != e_f; ++b_f)
+            for ( typename f_array::const_iterator b_f = m_to_write.formats.begin(),
+                e_f = m_to_write.formats.end(); b_f != e_f; ++b_f)
                 m.format(*b_f);
 
-            for ( typename d_array::const_iterator b_d = to_write->destinations.begin(),
-                e_d = to_write->destinations.end(); b_d != e_d; ++b_d)
+            for ( typename d_array::const_iterator b_d = m_to_write.destinations.begin(),
+                e_d = m_to_write.destinations.end(); b_d != e_d; ++b_d)
                 m.write(*b_d);
         }
 
     private:
-        data m_to_write;
+        write_info m_to_write;
     };
 
 
@@ -399,7 +375,6 @@ thread-safe access to an instance of this clas (used internally).
     template<
             class formatter_base,
             class destination_base,
-            class lock_resource = default_ ,
             // note: we're counting on these defaults in format_find_writer
             class formatter_array =
                 hpx::util::logging::array::shared_ptr_holder<formatter_base>,
@@ -411,16 +386,11 @@ thread-safe access to an instance of this clas (used internally).
         typedef typename formatter_base::ptr_type formatter_ptr;
         typedef typename destination_base::ptr_type destination_ptr;
 
-        typedef typename detail::to_override<formatter_base>::type override_;
-        typedef typename use_default<lock_resource,
-            typename hpx::util::logging::types<override_>::lock_resource >
-            ::type lock_resource_type;
-
         typedef formatter_and_destination_array_holder<formatter_array,
             destination_array> holder_base_type;
 
-        typedef with_route<formatter_base, destination_base, lock_resource_type,
-            formatter_array, destination_array> self_type;
+        typedef with_route<formatter_base, destination_base, formatter_array,
+            destination_array> self_type;
 
         typedef std::vector<formatter_ptr> f_array;
         typedef std::vector<destination_ptr> d_array;
@@ -433,7 +403,6 @@ thread-safe access to an instance of this clas (used internally).
             bool do_clear_afterwards;
         };
         typedef std::vector<write_once> write_array;
-        typedef typename lock_resource_type::template finder<write_array>::type data;
 
     public:
         with_route(const formatter_array& formatters,
@@ -545,23 +514,19 @@ thread-safe access to an instance of this clas (used internally).
         route_do_append append_route() { return route_do_append(*this); }
 
         void append_formatter(formatter_ptr fmt) {
-            typename data::write to_write(m_to_write);
-
-            if ( to_write->empty() )
-                to_write->push_back( write_once() );
+            if ( m_to_write.empty() )
+                m_to_write.push_back( write_once() );
 
             // we need to add it at the end; if there are any destinations,
             // we need to add it after those
-            bool can_append_to_back = to_write->back().destinations.empty();
+            bool can_append_to_back = m_to_write.back().destinations.empty();
             if ( !can_append_to_back)
-                to_write->push_back( write_once() );
-            to_write->back().formats.push_back(fmt);
+                m_to_write.push_back( write_once() );
+            m_to_write.back().formats.push_back(fmt);
         }
         void del_formatter(formatter_ptr fmt) {
-            typename data::write to_write(m_to_write);
-
-            for ( typename write_array::const_iterator b = to_write->begin(),
-                e = to_write->end(); b != e; ++b) {
+            for ( typename write_array::const_iterator b = m_to_write.begin(),
+                e = m_to_write.end(); b != e; ++b) {
                 typename f_array::iterator del = std::remove( b->formats.begin(),
                     b->formats.end(), fmt); //-V807
                 b->formats.erase(del, b->formats.end());
@@ -569,23 +534,19 @@ thread-safe access to an instance of this clas (used internally).
         }
 
         void append_destination(destination_ptr dest) {
-            typename data::write to_write(m_to_write);
+            if ( m_to_write.empty() )
+                m_to_write.push_back( write_once() );
 
-            if ( to_write->empty() )
-                to_write->push_back( write_once() );
-
-            if ( to_write->back().do_clear_afterwards)
+            if ( m_to_write.back().do_clear_afterwards)
                 // after clear, always start a new write
-                to_write->push_back( write_once() );
+                m_to_write.push_back( write_once() );
 
-            to_write->back().destinations.push_back(dest);
+            m_to_write.back().destinations.push_back(dest);
         }
 
         void del_destination(destination_ptr dest) {
-            typename data::write to_write(m_to_write);
-
-            for ( typename write_array::const_iterator b = to_write->begin(),
-                e = to_write->end(); b != e; ++b) {
+            for ( typename write_array::const_iterator b = m_to_write.begin(),
+                e = m_to_write.end(); b != e; ++b) {
                 typename d_array::iterator del = std::remove( b->destinations.begin(),
                     b->destinations.end(), dest); //-V807
                 b->destinations.erase(del, b->destinations.end());
@@ -598,12 +559,10 @@ thread-safe access to an instance of this clas (used internally).
         }
 
         void append_clear_format() {
-            typename data::write to_write(m_to_write);
-
-            if ( to_write->empty() )
-                to_write->push_back( write_once() );
-            to_write->back().do_clear_afterwards = true;
-            to_write->push_back( write_once() );
+            if ( m_to_write.empty() )
+                m_to_write.push_back( write_once() );
+            m_to_write.back().do_clear_afterwards = true;
+            m_to_write.push_back( write_once() );
         }
 
 
@@ -611,10 +570,8 @@ thread-safe access to an instance of this clas (used internally).
         void write(msg_type & msg) const {
             format_and_write m(msg);
 
-            // note: here, we're reading (data::read)!
-            typename data::read to_write(m_to_write);
-            for ( typename write_array::const_iterator b = to_write->begin(),
-                e = to_write->end(); b != e; ++b) {
+            for ( typename write_array::const_iterator b = m_to_write.begin(),
+                e = m_to_write.end(); b != e; ++b) {
                 for ( typename f_array::const_iterator b_f = b->formats.begin(),
                     e_f = b->formats.end(); b_f != e_f; ++b_f)
                     m.format(*b_f);
@@ -647,14 +604,13 @@ thread-safe access to an instance of this clas (used internally).
 
         void do_set_route(const route & r) {
             {
-            typename data::write to_write(m_to_write);
-            to_write->clear();
+            m_to_write.clear();
             }
             do_append_route(r);
         }
 
     private:
-        data m_to_write;
+        write_array m_to_write;
     };
 
 
@@ -668,9 +624,4 @@ thread-safe access to an instance of this clas (used internally).
 #include <hpx/util/logging/format/destination/defaults.hpp>
 #include <hpx/util/logging/gather/ostream_like.hpp>
 
-#if !defined(HPX_HAVE_LOG_NO_TS)
-#include <hpx/util/logging/writer/ts_write.hpp>
 #endif
-
-#endif
-

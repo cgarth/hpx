@@ -21,10 +21,6 @@
 #ifndef JT28092007_format_write_detail_HPP_DEFINED
 #define JT28092007_format_write_detail_HPP_DEFINED
 
-#if defined(HPX_MSVC) && (HPX_MSVC >= 1020)
-# pragma once
-#endif
-
 #include <hpx/util/logging/detail/fwd.hpp>
 
 #include <memory>
@@ -130,8 +126,6 @@ See manipulator.
 @param destination_base The base class for all destination classes from your application.
 See manipulator.
 
-@param lock_resource How will we lock important resources - routing them (msg_route)
-
 @param apply_format_and_write [optional] The class that knows how to call
 the formatters and destinations. See @ref apply_format_and_write_object
 
@@ -156,10 +150,8 @@ if we were to keep smart pointers within the router itself.
 template<
         class formatter_base,
         class destination_base,
-        class lock_resource = default_ ,
         class apply_format_and_write = default_ ,
-        class router_type = msg_route::simple<formatter_base, destination_base,
-            lock_resource> ,
+        class router_type = msg_route::simple<formatter_base, destination_base> ,
         class formatter_array = array::shared_ptr_holder<formatter_base> ,
         class destination_array = array::shared_ptr_holder<destination_base> >
 struct format_write {
@@ -170,11 +162,6 @@ struct format_write {
         ::hpx::util::logging::format_and_write
         ::simple<typename formatter_base::raw_param> >
         ::type apply_format_and_write_type;
-
-    typedef typename hpx::util::logging::detail::to_override<formatter_base>
-        ::type override_;
-    typedef typename use_default<lock_resource, typename hpx::util::logging
-        ::types<override_>::lock_resource > ::type lock_resource_type;
 
     typedef formatter_base formatter_base_type;
     typedef destination_base destination_base_type;
@@ -268,7 +255,7 @@ public:
         "spacer" string
     */
     template<class formatter> void add_formatter(formatter fmt,
-        const char_type * format_str) {
+        const char * format_str) {
         add_formatter( spacer(fmt, format_str) );
     }
 
@@ -331,4 +318,3 @@ private:
 #include <hpx/util/logging/detail/use_format_write.hpp>
 
 #endif
-

@@ -18,10 +18,6 @@
 #ifndef JT28092007_logger_HPP_DEFINED
 #define JT28092007_logger_HPP_DEFINED
 
-#if defined(HPX_MSVC) && (HPX_MSVC >= 1020)
-# pragma once
-#endif
-
 #include <hpx/util/logging/detail/fwd.hpp>
 #include <hpx/util/logging/detail/cache_before_init.hpp>
 #include <hpx/util/logging/detail/find_gather.hpp>
@@ -395,4 +391,3 @@ namespace hpx { namespace util { namespace logging {
 }}}
 
 #endif
-

@@ -17,13 +17,10 @@
 #ifndef JT28092007_format_fwd_detail_HPP_DEFINED
 #define JT28092007_format_fwd_detail_HPP_DEFINED
 
-#if defined(HPX_MSVC) && (HPX_MSVC >= 1020)
-# pragma once
-#endif
-
 #include <hpx/util/logging/logging.hpp>
 #include <hpx/util/logging/format/optimize.hpp>
 #include <hpx/util/logging/gather/ostream_like.hpp>
+#include <sstream>
 
 namespace hpx { namespace util { namespace logging {
 
@@ -61,7 +58,7 @@ Example:
 #include <hpx/util/logging/logging.hpp>
 #include <hpx/util/logging/format/optimize.hpp>
 
-HPX_LOG_FORMAT_MSG( hpx::util::logging::optimize::cache_string_one_str<> )
+HPX_LOG_FORMAT_MSG( hpx::util::logging::optimize::cache_string_one_str )
 
 #if defined(HPX_LOG_DEFINE_LOGS)
 #include <hpx/util/logging/format.hpp>
@@ -84,9 +81,7 @@ void init_logs();
 template<
             class format_base_type = default_,
             class destination_base_type = default_ ,
-            class thread_safety = default_ ,
-            class gather = default_,
-            class lock_resource = default_
+            class gather = default_
     > struct logger_format_write;
 
 
@@ -97,45 +92,35 @@ template<
     (works only for the default levels; for any other level, returns "")
 */
 struct dump_default_levels {
-    static const char_type * dump(::hpx::util::logging::level::type lvl) {
+    static const char * dump(::hpx::util::logging::level::type lvl) {
         using namespace ::hpx::util::logging::level;
         switch ( lvl) {
-            case debug:     return HPX_LOG_STR("[debug] ");
-            case info:      return HPX_LOG_STR("[info]  ");
-            case warning:   return HPX_LOG_STR("[warn]  ");
-            case error:     return HPX_LOG_STR("[ERROR] ");
-            case fatal:     return HPX_LOG_STR("[FATAL] ");
-            default:        return HPX_LOG_STR("");
+            case debug:     return "[debug] ";
+            case info:      return "[info]  ";
+            case warning:   return "[warn]  ";
+            case error:     return "[ERROR] ";
+            case fatal:     return "[FATAL] ";
+            default:        return "";
         }
     }
-};
-
-/**
-    Specifies the class that will dump the levels. Used by formatter::tag::level class.
-*/
-template<class T = override> struct dump_level {
-    typedef dump_default_levels type;
 };
 
 
 namespace detail {
     // finds the gather type, when using formatting (for logger_format_write)
     template<class gather> struct format_find_gather {
-        typedef typename detail::to_override<gather>::type override_;
-
         // FIXME in the future, I might provide gather as a specific class!
-        typedef typename formatter::msg_type<override_>::type msg_type;
-        typedef typename ::hpx::util::logging::gather::find<override_>
-            ::template from_msg_type<msg_type>::type type;
+        typedef ::hpx::util::logging::optimize::cache_string_one_str msg_type;
+        typedef typename ::hpx::util::logging::detail
+            ::find_gather< std::ostringstream, msg_type >::type type;
     };
 }
 
 
 // specialize for logger_format_write
-template<class format_base, class destination_base, class thread_safety, class gather,
-         class lock_resource>
+template<class format_base, class destination_base, class gather>
         struct logger_to_gather< logger_format_write<format_base, destination_base,
-                                 thread_safety, gather, lock_resource> > {
+                                 gather> > {
 
     typedef typename detail::format_find_gather<gather>::type gather_type;
 };
@@ -176,9 +161,4 @@ template<class gather = default_> struct named_logger {
 
 }}}
 
-
-#include <hpx/util/logging/detail/scenario.hpp>
-#include <hpx/util/logging/detail/tags.hpp>
-
 #endif
-

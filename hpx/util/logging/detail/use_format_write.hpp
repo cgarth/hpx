@@ -20,10 +20,6 @@
 #ifndef JT28092007_use_format_write_HPP_DEFINED
 #define JT28092007_use_format_write_HPP_DEFINED
 
-#if defined(HPX_MSVC) && (HPX_MSVC >= 1020)
-# pragma once
-#endif
-
 #include <hpx/util/logging/detail/fwd.hpp>
 #include <hpx/util/logging/format/optimize.hpp>
 #include <hpx/util/logging/gather/ostream_like.hpp>
@@ -60,23 +56,20 @@ FIXME need to have more template params
 Your formatter base class
 @param destination_base @ref misc_use_defaults "(optional)"
 Your destination base class
-@param thread_safety @ref misc_use_defaults "(optional)"
-Thread-safety. Any of the writer::threading classes.
 @param gather @ref misc_use_defaults "(optional)"
 The class that @ref gather "gathers" the message
 */
-template<class format_base, class destination_base, class thread_safety,
-class gather, class lock_resource>
+template<class format_base, class destination_base, class gather>
 struct logger_format_write
     : logger<
             typename detail::format_find_gather<gather>::type ,
-            typename detail::format_find_writer<format_base, destination_base,
-    lock_resource, thread_safety>::type >
+            typename detail::format_find_writer<format_base, destination_base>::type
+    >
 {
     typedef logger<
             typename detail::format_find_gather<gather>::type ,
             typename detail::format_find_writer<format_base,
-        destination_base, lock_resource, thread_safety>::type > logger_base_type;
+        destination_base>::type > logger_base_type;
 
     HPX_LOGGING_FORWARD_CONSTRUCTOR(logger_format_write, logger_base_type)
 };
@@ -84,4 +77,3 @@ struct logger_format_write
 }}}
 
 #endif
-

@@ -41,6 +41,8 @@ if(HPX_WITH_PARCELPORT_MPI)
   endif()
 
   macro(add_parcelport_mpi_module)
+    # find MPI again to re-populate variables in this context
+    find_package(MPI)
     hpx_debug("add_parcelport_mpi_module")
     if(MPI_CXX_INCLUDE_PATH)
       include_directories(${MPI_CXX_INCLUDE_PATH})
